@@ -18,7 +18,7 @@
     IBOutlet UISlider *slider;
     IBOutlet UITextView *logView;
 
-    ASINetworkQueue *queue;
+    NSURLRequest *request;
     BOOL isStarted;
     NSTimer *requestTimer;
     NSMutableString *logText;
@@ -52,9 +52,10 @@
     requestTimer = nil;
     isStarted = false;
     
-    // Queue
-    queue = [[ASINetworkQueue alloc] init];
-    queue.maxConcurrentOperationCount = 1;
+    // HTTP
+    // http://primebook.skillupjapan.net/m/bookstore.json
+    // http://outreach.jach.hawaii.edu/pressroom/2004_wfcam/orion-zoom-large.png
+    request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.youtube.com"]];
     
     lastBattery = -2;
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
@@ -79,9 +80,6 @@
 - (IBAction)startOrStop:(id)sender
 {
     if (isStarted) {
-        // cleanup queue
-        queue = [[ASINetworkQueue alloc] init];
-        queue.maxConcurrentOperationCount = 5;
 
         [self stopTimer];
         [startButton setTitle:@"Start" forState:UIControlStateNormal];
@@ -121,22 +119,38 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)sendRequest
 {
-    // http://primebook.skillupjapan.net/m/bookstore.json
-    // http://outreach.jach.hawaii.edu/pressroom/2004_wfcam/orion-zoom-large.png
-    __block ASIHTTPRequest *request = [ASIHTTPRequest requestWithURL:[NSURL URLWithString:@"http://www.youtube.com"]];
+    [[NSURLConnection alloc] initWithRequest:request delegate:self];
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
+    // A response has been received, this is where we initialize the instance var you created
+    // so that we can append data to it in the didReceiveData method
+    // Furthermore, this method is called each time there is a redirect so reinitializing it
+    // also serves to clear it
+    _responseData = [[NSMutableData alloc] init];
+    [self updateQueueIndicator];
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
+    // Append the new data to the instance variable you declared
+    [_responseData appendData:data];
+}
+
+- (NSCachedURLResponse *)connection:(NSURLConnection *)connection
+                  willCacheResponse:(NSCachedURLResponse*)cachedResponse {
+    // Return nil to indicate not necessary to store a cached response for this connection
+    return nil;
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    // The request is complete and data has been received
+    // You can parse the stuff in your instance variable now
     
-    [request setShouldContinueWhenAppEntersBackground:YES];
-    [request setCompletionBlock:^{
-        [self updateQueueIndicator];
-        NSLog(@"=-=-=%d - %d", request.responseStatusCode, request.responseData.length);
-        NSLog(@"=========================== Complete %d Battery %f", [queue operationCount], [[UIDevice currentDevice] batteryLevel]);
-    }];
-    [request setFailedBlock:^{
-        [self updateQueueIndicator];
-        NSLog(@"=========================== Failed %d Battery %f", [queue operationCount], [[UIDevice currentDevice] batteryLevel]);
-    }];
-    [queue addOperation:request];
-    [queue setSuspended:NO];
+}
+
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    // The request has failed for some reason!
+    // Check the error var
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

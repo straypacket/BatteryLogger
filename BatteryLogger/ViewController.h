@@ -9,8 +9,9 @@
 #import <UIKit/UIKit.h>
 #import <CoreLocation/CoreLocation.h>
 
-@interface ViewController : UIViewController <CLLocationManagerDelegate> {
+@interface ViewController : UIViewController <CLLocationManagerDelegate, NSURLConnectionDelegate> {
     CLLocationManager *locationManager;
+    NSMutableData *_responseData;
 }
 @property(nonatomic, retain) CLLocationManager *locationManager;
 @end
