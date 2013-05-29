@@ -12,7 +12,7 @@
                         <rect key="frame" x="0.0" y="20" width="320" height="548"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="120" translatesAutoresizingMaskIntoConstraints="NO" id="vsK-x9-t10">
+                            <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="240" translatesAutoresizingMaskIntoConstraints="NO" id="vsK-x9-t10">
                                 <constraints>
                                     <constraint firstAttribute="width" constant="255" id="hyh-XX-C6B"/>
                                 </constraints>

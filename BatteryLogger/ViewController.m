@@ -23,6 +23,8 @@
     NSTimer *requestTimer;
     NSMutableString *logText;
     float lastBattery;
+    BOOL wifiReach;
+    UIAlertView *wifialert;
 }
 
 @synthesize locationManager;
@@ -55,7 +57,7 @@
     // HTTP
     // http://primebook.skillupjapan.net/m/bookstore.json
     // http://outreach.jach.hawaii.edu/pressroom/2004_wfcam/orion-zoom-large.png
-    request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.youtube.com"]];
+    request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.microsoft.com"]];
     
     lastBattery = -2;
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
@@ -65,15 +67,23 @@
     [locationManager setDelegate:self];
     //Only applies when in foreground otherwise it is very significant changes
     [locationManager setDesiredAccuracy:kCLLocationAccuracyBest];
+    
+    // Reacability
+    wifiReach = ([[Reachability reachabilityForInternetConnection] currentReachabilityStatus] == ReachableViaWiFi);
+    wifialert = [[UIAlertView alloc] initWithTitle:@"Active wifi connection"
+                                                    message:@"You are using WIFI! Please disable it to make tests through 3G access"
+                                                   delegate:nil
+                                          cancelButtonTitle:@"OK"
+                                          otherButtonTitles:nil];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     CLLocationCoordinate2D currentCoordinates = newLocation.coordinate;
-    NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f", currentCoordinates.latitude, currentCoordinates.longitude);
+    //NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f", currentCoordinates.latitude, currentCoordinates.longitude);
 }
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
-    NSLog(@"Unable to start location manager. Error:%@", [error description]);
+    //NSLog(@"Unable to start location manager. Error:%@", [error description]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,6 +95,9 @@
         [startButton setTitle:@"Start" forState:UIControlStateNormal];
         [locationManager stopUpdatingLocation];
     } else { // START
+        if (wifiReach) {
+            [wifialert show];
+        }
         [self startTimer];
         [startButton setTitle:@"Stop" forState:UIControlStateNormal];
         [locationManager startUpdatingLocation];
@@ -162,6 +175,8 @@
 
 - (void)updateQueueIndicator
 {
+    NSLog(@"Updating:%f\n", [[UIDevice currentDevice] batteryLevel]);
+    NSLog(@"%@, %f\n", [NSDate date], [[UIDevice currentDevice] batteryLevel]);
     if (lastBattery != [[UIDevice currentDevice] batteryLevel]) {
         [logText appendFormat:@"%@, %f\n", [NSDate date], [[UIDevice currentDevice] batteryLevel]];
         [logView setText:logText];

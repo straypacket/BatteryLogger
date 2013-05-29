@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <CoreLocation/CoreLocation.h>
+#import "Reachability.h"
 
 @interface ViewController : UIViewController <CLLocationManagerDelegate, NSURLConnectionDelegate> {
     CLLocationManager *locationManager;
