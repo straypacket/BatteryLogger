@@ -27,6 +27,7 @@
     NSMutableString *logText;
     float lastBattery;
     CLLocation *lastLocation;
+    CLLocation *latestLocation;
     BOOL wifiReach;
     UIAlertView *wifialert;
     int counter;
@@ -68,6 +69,7 @@
     
     lastBattery = -2;
     lastLocation = [locationManager location];
+    latestLocation = lastLocation;
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
     
     // CoreLocation
@@ -90,6 +92,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     CLLocationCoordinate2D currentCoordinates = newLocation.coordinate;
+    latestLocation = newLocation;
     NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
 }
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
@@ -157,11 +160,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)sendRequest
 {
-    NSLog(@"Can I update? (%f)\n", [[locationManager location] distanceFromLocation:lastLocation]);
-    if ([[locationManager location] distanceFromLocation:lastLocation] != 0.0) {
+    NSLog(@"Can I update?\n");
+    //NSLog(@"Last location  : %@", lastLocation);
+    //NSLog(@"Latest location: %@", latestLocation);
+    if (lastLocation != latestLocation) {
         NSLog(@"Allowing request\n");
         NSURLConnection *reply = [[NSURLConnection alloc] initWithRequest:request delegate:self];
-        lastLocation = [locationManager location];
+        lastLocation = latestLocation;
     }
 
 }
