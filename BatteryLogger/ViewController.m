@@ -93,7 +93,7 @@
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     CLLocationCoordinate2D currentCoordinates = newLocation.coordinate;
     latestLocation = newLocation;
-    NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
+    //NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
 }
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
     //NSLog(@"Unable to start location manager. Error:%@", [error description]);
