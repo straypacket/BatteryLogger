@@ -3,7 +3,8 @@
 //  BatteryLogger
 //
 //  Created by Michael He on 2013/05/22.
-//  Copyright (c) 2013年 MichaelHe. All rights reserved.
+//  Modified, updated and maintained by Daniel Pereira 2013/06/03
+//  Copyright (c) 2013年 SkillUpJapan Corp. All rights reserved.
 //
 
 #import "ViewController.h"
@@ -17,14 +18,18 @@
     IBOutlet UILabel *centerLabel;
     IBOutlet UISlider *slider;
     IBOutlet UITextView *logView;
+    //IBOutlet UISwitch *modeSwitch;
 
     NSURLRequest *request;
     BOOL isStarted;
+    BOOL modeSwitcherValue;
     NSTimer *requestTimer;
     NSMutableString *logText;
     float lastBattery;
+    CLLocation *lastLocation;
     BOOL wifiReach;
     UIAlertView *wifialert;
+    int counter;
 }
 
 @synthesize locationManager;
@@ -33,6 +38,8 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
+    
+    modeSwitcherValue = false;
 
     logText = [NSMutableString string];
     // Label
@@ -60,6 +67,7 @@
     request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.microsoft.com"]];
     
     lastBattery = -2;
+    lastLocation = [locationManager location];
     [[UIDevice currentDevice] setBatteryMonitoringEnabled:YES];
     
     // CoreLocation
@@ -68,19 +76,21 @@
     //Only applies when in foreground otherwise it is very significant changes
     [locationManager setDesiredAccuracy:kCLLocationAccuracyBest];
     
-    // Reacability
+    // Reachability
     wifiReach = ([[Reachability reachabilityForInternetConnection] currentReachabilityStatus] == ReachableViaWiFi);
     wifialert = [[UIAlertView alloc] initWithTitle:@"Active wifi connection"
                                                     message:@"You are using WIFI! Please disable it to make tests through 3G access"
                                                    delegate:nil
                                           cancelButtonTitle:@"OK"
                                           otherButtonTitles:nil];
+    
+    counter = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     CLLocationCoordinate2D currentCoordinates = newLocation.coordinate;
-    //NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f", currentCoordinates.latitude, currentCoordinates.longitude);
+    NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
 }
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
     //NSLog(@"Unable to start location manager. Error:%@", [error description]);
@@ -93,14 +103,29 @@
 
         [self stopTimer];
         [startButton setTitle:@"Start" forState:UIControlStateNormal];
-        [locationManager stopUpdatingLocation];
+        
+        if (modeSwitcherValue == true){
+            NSLog(@"Stopping significant changes location monitoring");
+            [locationManager stopMonitoringSignificantLocationChanges];
+        }
+        else {
+            NSLog(@"Stopping verbose location monitoring");
+            [locationManager stopUpdatingLocation];
+        }
     } else { // START
         if (wifiReach) {
             [wifialert show];
         }
         [self startTimer];
         [startButton setTitle:@"Stop" forState:UIControlStateNormal];
-        [locationManager startUpdatingLocation];
+        if (modeSwitcherValue == true){
+            NSLog(@"Starting significant changes location monitoring");
+            [locationManager startMonitoringSignificantLocationChanges];
+        }
+        else {
+            NSLog(@"Starting verbose location monitoring");
+            [locationManager startUpdatingLocation];
+        }
     }
 }
 
@@ -132,7 +157,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)sendRequest
 {
-    [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    NSLog(@"Can I update? (%f)\n", [[locationManager location] distanceFromLocation:lastLocation]);
+    if ([[locationManager location] distanceFromLocation:lastLocation] != 0.0) {
+        NSLog(@"Allowing request\n");
+        NSURLConnection *reply = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+        lastLocation = [locationManager location];
+    }
+
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
@@ -167,6 +198,27 @@
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+- (IBAction)modeSwitchValueChanged:(id)sender
+{
+    if (modeSwitcherValue == true) {
+        modeSwitcherValue = false;
+        // Disable update only on significant changes
+        NSLog(@"Stopping significant changes location monitoring");
+        [locationManager stopMonitoringSignificantLocationChanges];
+        NSLog(@"starting verbose location monitoring");
+        [locationManager startUpdatingLocation];
+    }
+    else {
+        modeSwitcherValue = true;
+        // Enable update only on significant changes
+        NSLog(@"Stopping verbose location monitoring");
+        [locationManager stopUpdatingLocation];
+        NSLog(@"Starting significant changes location monitoring");
+        [locationManager startMonitoringSignificantLocationChanges];
+    }
+    NSLog(@"Toggled switch to %d", modeSwitcherValue);
+}
+
 - (IBAction)sliderValueChanged:(id)sender
 {
     if (isStarted) [self startTimer];
@@ -175,10 +227,10 @@
 
 - (void)updateQueueIndicator
 {
-    NSLog(@"Updating:%f\n", [[UIDevice currentDevice] batteryLevel]);
-    NSLog(@"%@, %f\n", [NSDate date], [[UIDevice currentDevice] batteryLevel]);
+    counter += 1;
     if (lastBattery != [[UIDevice currentDevice] batteryLevel]) {
-        [logText appendFormat:@"%@, %f\n", [NSDate date], [[UIDevice currentDevice] batteryLevel]];
+        NSLog(@"Updating Queue Indicator:%f\n", [[UIDevice currentDevice] batteryLevel]);
+        [logText appendFormat:@"%d - %@, %f\n", counter, [NSDate date], [[UIDevice currentDevice] batteryLevel]];
         [logView setText:logText];
         logView.selectedRange = NSMakeRange(0, logText.length);
         lastBattery = [[UIDevice currentDevice] batteryLevel];
