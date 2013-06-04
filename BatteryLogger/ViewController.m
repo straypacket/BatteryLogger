@@ -93,7 +93,7 @@
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     CLLocationCoordinate2D currentCoordinates = newLocation.coordinate;
     latestLocation = newLocation;
-    //NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
+    NSLog(@"Entered new Location with the coordinates Latitude: %f Longitude: %f, with timestamp %@", currentCoordinates.latitude, currentCoordinates.longitude, newLocation.timestamp);
 }
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
     //NSLog(@"Unable to start location manager. Error:%@", [error description]);
@@ -167,6 +167,15 @@
         NSLog(@"Allowing request\n");
         NSURLConnection *reply = [[NSURLConnection alloc] initWithRequest:request delegate:self];
         lastLocation = latestLocation;
+    }
+    
+    counter += 1;
+    if (lastBattery != [[UIDevice currentDevice] batteryLevel]) {
+        NSLog(@"Updating Queue Indicator:%f\n", [[UIDevice currentDevice] batteryLevel]);
+        [logText appendFormat:@"%d - %@, %f\n", counter, [NSDate date], [[UIDevice currentDevice] batteryLevel]];
+        [logView setText:logText];
+        logView.selectedRange = NSMakeRange(0, logText.length);
+        lastBattery = [[UIDevice currentDevice] batteryLevel];
     }
 
 }
